@@ -65,9 +65,12 @@ Frontend default URL: `http://localhost:5173`
 - Never commit real API keys or passwords.
 - `application.yaml` is parameterized with environment variables.
 
-## Project Overview`r`n`r`nFlowLoop focuses on practical AI agent workflows, including multi-model orchestration, tool integration, streaming conversations, and a clean full-stack architecture for iterative product development.
+## Project Overview
+
+FlowLoop focuses on practical AI agent workflows, including multi-model orchestration, tool integration, streaming conversations, and a clean full-stack architecture for iterative product development.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
 
