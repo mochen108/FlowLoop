@@ -1,6 +1,6 @@
 # FlowLoop
 
-FlowLoop is a full-stack AI agent platform built with Java (Spring AI) and React.
+FlowLoop is a full-stack AI agent platform built with Java (Spring AI) and React. This project focuses on practical AI agent workflows, including multi-model orchestration, tool integration, streaming conversations, and a full-stack architecture for iterative product development.
 
 ## Highlights
 
@@ -54,23 +54,17 @@ cd core
 
 ```bash
 cd ui
+copy .env.example .env
 npm install
 npm run dev
 ```
 
 Frontend default URL: `http://localhost:5173`
 
-## Security Notes
+## Notes
 
-- Never commit real API keys or passwords.
 - `application.yaml` is parameterized with environment variables.
-
-## Project Overview
-
-FlowLoop focuses on practical AI agent workflows, including multi-model orchestration, tool integration, streaming conversations, and a clean full-stack architecture for iterative product development.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-
