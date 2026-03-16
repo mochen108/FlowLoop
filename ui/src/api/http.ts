@@ -63,7 +63,7 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 
 function createTimeoutSignal(
   timeoutMs: number,
-  signal?: AbortSignal,
+  signal?: AbortSignal | null,
 ): { signal: AbortSignal; cleanup: () => void } {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
