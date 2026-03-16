@@ -10,10 +10,15 @@ export interface ApiResponse<T = unknown> {
 // 请求配置选项
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean | null | undefined>;
+  timeoutMs?: number;
 }
 
+const DEFAULT_TIMEOUT_MS = 15000;
+const API_ORIGIN =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ?? "http://localhost:8080";
+
 // API 基础路径（可以根据环境变量配置）
-export const BASE_URL = "http://localhost:8080/api";
+export const BASE_URL = `${API_ORIGIN}/api`;
 
 /**
  * 构建完整的 URL（包含查询参数）
@@ -56,6 +61,29 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   return data;
 }
 
+function createTimeoutSignal(
+  timeoutMs: number,
+  signal?: AbortSignal,
+): { signal: AbortSignal; cleanup: () => void } {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+    } else {
+      signal.addEventListener("abort", () => controller.abort(signal.reason), {
+        once: true,
+      });
+    }
+  }
+
+  return {
+    signal: controller.signal,
+    cleanup: () => window.clearTimeout(timeoutId),
+  };
+}
+
 /**
  * 封装的 fetch 请求函数
  */
@@ -63,7 +91,13 @@ async function request<T = unknown>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { params, headers, ...restOptions } = options;
+  const {
+    params,
+    headers,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    signal,
+    ...restOptions
+  } = options;
 
   // 构建完整 URL
   const fullUrl = buildUrl(url, params);
@@ -73,21 +107,30 @@ async function request<T = unknown>(
     "Content-Type": "application/json",
     ...headers,
   };
+  const { signal: timeoutSignal, cleanup } = createTimeoutSignal(timeoutMs, signal);
 
   try {
     const response = await fetch(fullUrl, {
       ...restOptions,
       headers: defaultHeaders,
+      signal: timeoutSignal,
     });
 
     const apiResponse = await handleResponse<T>(response);
     return apiResponse.data;
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      message.error("请求超时，请稍后重试");
+      throw new Error("请求超时，请稍后重试");
+    }
+
     // 统一错误处理
     if (error instanceof Error) {
       throw error;
     }
     throw new Error("网络请求失败");
+  } finally {
+    cleanup();
   }
 }
 

@@ -329,21 +329,34 @@ export async function uploadDocument(
   formData.append("kbId", kbId);
   formData.append("file", file);
 
-  const response = await fetch(`${BASE_URL}/documents/upload`, {
-    method: "POST",
-    body: formData,
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+  try {
+    const response = await fetch(`${BASE_URL}/documents/upload`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const apiResponse = await response.json();
+    if (apiResponse.code !== 200) {
+      throw new Error(apiResponse.message || "上传失败");
+    }
+
+    return apiResponse.data;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("上传超时，请稍后重试");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  const apiResponse = await response.json();
-  if (apiResponse.code !== 200) {
-    throw new Error(apiResponse.message || "上传失败");
-  }
-
-  return apiResponse.data;
 }
 
 /**
