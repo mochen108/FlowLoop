@@ -61,6 +61,14 @@ npm run dev
 
 Frontend default URL: `http://localhost:5173`
 
+### 5. Verify backend health
+
+After backend startup, verify health endpoint:
+
+```bash
+curl http://localhost:8080/actuator/health
+```
+
 ## Notes
 
 - `application.yaml` is parameterized with environment variables.
