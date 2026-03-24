@@ -25,7 +25,7 @@ jobs:
         run: chmod +x ./mvnw
 
       - name: Build backend
-        run: ./mvnw -B -DskipTests package
+        run: ./mvnw -B verify
 
   frontend-build:
     name: Frontend Build (Node)
