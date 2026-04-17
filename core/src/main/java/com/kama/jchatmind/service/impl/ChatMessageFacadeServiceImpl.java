@@ -4,15 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kama.jchatmind.converter.ChatMessageConverter;
 import com.kama.jchatmind.event.ChatEvent;
 import com.kama.jchatmind.exception.BizException;
+import com.kama.jchatmind.mapper.ChatSessionMapper;
 import com.kama.jchatmind.mapper.ChatMessageMapper;
 import com.kama.jchatmind.model.dto.ChatMessageDTO;
 import com.kama.jchatmind.model.entity.ChatMessage;
+import com.kama.jchatmind.model.entity.ChatSession;
 import com.kama.jchatmind.model.request.CreateChatMessageRequest;
 import com.kama.jchatmind.model.request.UpdateChatMessageRequest;
 import com.kama.jchatmind.model.response.CreateChatMessageResponse;
 import com.kama.jchatmind.model.response.GetChatMessagesResponse;
 import com.kama.jchatmind.model.vo.ChatMessageVO;
 import com.kama.jchatmind.service.ChatMessageFacadeService;
+import com.kama.jchatmind.service.ChatSessionTitleService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,7 +29,9 @@ import java.util.List;
 public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
 
     private final ChatMessageMapper chatMessageMapper;
+    private final ChatSessionMapper chatSessionMapper;
     private final ChatMessageConverter chatMessageConverter;
+    private final ChatSessionTitleService chatSessionTitleService;
     private final ApplicationEventPublisher publisher;
 
     @Override
@@ -117,10 +122,26 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
             if (result <= 0) {
                 throw new BizException("创建聊天消息失败");
             }
+
+            maybeGenerateChatSessionTitle(chatMessageDTO, chatMessage);
             return chatMessage;
         } catch (JsonProcessingException e) {
             throw new BizException("创建聊天消息时发生序列化错误: " + e.getMessage());
         }
+    }
+
+    private void maybeGenerateChatSessionTitle(ChatMessageDTO chatMessageDTO, ChatMessage chatMessage) {
+        if (chatMessageDTO.getRole() != ChatMessageDTO.RoleType.USER) {
+            return;
+        }
+
+        ChatSession chatSession = chatSessionMapper.selectById(chatMessage.getSessionId());
+        if (chatSession == null || (chatSession.getTitle() != null && !chatSession.getTitle().isBlank())) {
+            return;
+        }
+
+        chatSession.setTitle(chatSessionTitleService.generateTitle(chatMessage.getContent()));
+        chatSessionMapper.updateById(chatSession);
     }
 
     @Override
@@ -208,4 +229,3 @@ public class ChatMessageFacadeServiceImpl implements ChatMessageFacadeService {
         }
     }
 }
-

@@ -158,7 +158,6 @@ const EmptyAgentChatView: React.FC<DefaultAgentChatViewProps> = ({
               console.log("发送消息", message);
               const response = await createChatSession({
                 agentId: effectiveAgentId,
-                title: message.slice(0, 20),
               });
               await createChatMessage({
                 sessionId: response.chatSessionId ?? "",

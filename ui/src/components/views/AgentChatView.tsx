@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { message as antdMessage } from "antd";
 import AgentChatHistory from "./agentChatView/AgentChatHistory.tsx";
 import AgentChatInput from "./agentChatView/AgentChatInput.tsx";
@@ -17,7 +17,6 @@ import type { ChatMessageVO, SseMessage, SseMessageType } from "../../types";
 const AgentChatView: React.FC = () => {
   const { chatSessionId } = useParams<{ chatSessionId: string }>();
   const navigate = useNavigate();
-  const { state } = useLocation();
   const [loading, setLoading] = useState(false);
   const { agents } = useAgents();
   const { refreshChatSessions } = useChatSessions();
@@ -70,18 +69,18 @@ const AgentChatView: React.FC = () => {
       try {
         const response = await createChatSession({
           agentId: agentId,
-          title: message.slice(0, 20),
+        });
+        await createChatMessage({
+          agentId,
+          sessionId: response.chatSessionId,
+          role: "user",
+          content: message,
         });
         // 刷新聊天会话列表
         await refreshChatSessions();
         // 导航到新创建的会话
         navigate(`/chat/${response.chatSessionId}`, {
           replace: true,
-          // 携带初始化消息
-          state: {
-            init: false,
-            initMessage: message,
-          },
         });
       } catch (error) {
         console.error("创建聊天会话失败:", error);
@@ -90,23 +89,13 @@ const AgentChatView: React.FC = () => {
         setLoading(false);
       }
     } else {
-      if (state?.init) {
-        console.log("init", state.initMessage);
-        await createChatMessage({
-          agentId: agentId ?? "",
-          sessionId: chatSessionId,
-          role: "user",
-          content: state.initMessage ?? "",
-        });
-      } else {
-        console.log("ask", message);
-        await createChatMessage({
-          agentId: agentId ?? "",
-          sessionId: chatSessionId,
-          role: "user",
-          content: message,
-        });
-      }
+      await createChatMessage({
+        agentId: agentId ?? "",
+        sessionId: chatSessionId,
+        role: "user",
+        content: message,
+      });
+      await refreshChatSessions();
       await getChatMessages();
     }
   };
